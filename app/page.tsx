@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { createServerClient } from '@/lib/supabase';
 import { computeStreaks } from '@/lib/streaks';
 import type { DailyEntry, WhoopDaily, JobberDaily, Task, GolfRound } from '@/lib/types';
+import { isWhoopConnected } from '@/lib/whoop';
 
 import TopBar from '@/components/TopBar';
 import RecoveryRing from '@/components/rings/RecoveryRing';
@@ -108,7 +109,10 @@ export default async function DashboardPage() {
     : 'http://localhost:3000';
   fetch(`${baseUrl}/api/whoop`).catch(() => {});
 
-  const data = await fetchDashboardData();
+  const [data, whoopConnected] = await Promise.all([
+    fetchDashboardData(),
+    isWhoopConnected(),
+  ]);
   const aiTasks = data.tasks.filter((t) => t.source === 'ai_agent');
 
   return (
@@ -116,7 +120,7 @@ export default async function DashboardPage() {
       <DashboardClient hasEntryToday={data.hasEntryToday} />
 
       <main className="min-h-screen bg-[#0a0a0a] px-6 py-6 max-w-[1400px] mx-auto">
-        <TopBar recoveryScore={data.whoop?.recovery_score ?? null} />
+        <TopBar recoveryScore={data.whoop?.recovery_score ?? null} whoopConnected={whoopConnected} />
 
         {/* Row 1: Rings */}
         <section className="flex items-center justify-center gap-12 mb-10">

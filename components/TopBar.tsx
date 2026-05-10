@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 
 interface TopBarProps {
   recoveryScore: number | null;
+  whoopConnected: boolean;
 }
 
 function getRecoveryColor(score: number | null): string {
@@ -20,7 +21,7 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
-export default function TopBar({ recoveryScore }: TopBarProps) {
+export default function TopBar({ recoveryScore, whoopConnected }: TopBarProps) {
   const [time, setTime] = useState('');
   const [dateStr, setDateStr] = useState('');
 
@@ -67,6 +68,17 @@ export default function TopBar({ recoveryScore }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* WHOOP connect button */}
+        {!whoopConnected && (
+          <a
+            href="/api/whoop/auth"
+            className="text-xs px-3 py-1.5 rounded border border-[#00ff87]/30 text-[#00ff87] hover:bg-[#00ff87]/10 transition-colors"
+            style={{ fontFamily: 'DM Mono, monospace' }}
+          >
+            Connect WHOOP
+          </a>
+        )}
+
         {/* Recovery badge */}
         <div
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border"
