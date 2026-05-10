@@ -23,7 +23,9 @@ async function getToken(): Promise<string | null> {
     return data.access_token;
   }
 
-  // Refresh
+  // Refresh — UPDATE the existing row instead of INSERT to avoid stale duplicate rows.
+  // WHOOP refresh tokens are single-use; inserting a new row on every refresh means
+  // concurrent requests can burn the token and leave the DB in an invalid state.
   const res = await fetch(WHOOP_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -36,12 +38,30 @@ async function getToken(): Promise<string | null> {
   });
   if (!res.ok) { console.error('WHOOP refresh failed:', await res.text()); return null; }
   const json = await res.json() as { access_token: string; refresh_token: string; expires_in: number };
-  await supabase.from('whoop_tokens').insert({
-    access_token: json.access_token,
-    refresh_token: json.refresh_token,
-    expires_at: new Date(Date.now() + json.expires_in * 1000).toISOString(),
-    updated_at: new Date().toISOString(),
-  });
+
+  // Get the ID of the row we just read so we update it in-place
+  const { data: existing } = await supabase
+    .from('whoop_tokens')
+    .select('id')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from('whoop_tokens').update({
+      access_token: json.access_token,
+      refresh_token: json.refresh_token,
+      expires_at: new Date(Date.now() + json.expires_in * 1000).toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq('id', existing.id);
+  } else {
+    await supabase.from('whoop_tokens').insert({
+      access_token: json.access_token,
+      refresh_token: json.refresh_token,
+      expires_at: new Date(Date.now() + json.expires_in * 1000).toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+  }
   return json.access_token;
 }
 
