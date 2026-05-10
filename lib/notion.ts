@@ -45,22 +45,14 @@ export async function fetchNotionTasks(today: string): Promise<Task[]> {
   const response = await notion.databases.query({
     database_id: databaseId,
     filter: {
-      and: [
+      or: [
         {
-          property: 'Done',
-          checkbox: { equals: false },
+          property: 'Date',
+          date: { equals: today },
         },
         {
-          or: [
-            {
-              property: 'Date',
-              date: { equals: today },
-            },
-            {
-              property: 'Date',
-              date: { is_empty: true },
-            },
-          ],
+          property: 'Date',
+          date: { is_empty: true },
         },
       ],
     },
