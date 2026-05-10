@@ -126,7 +126,19 @@ export async function GET() {
 
     console.log('Upserting whoopData:', JSON.stringify(whoopData));
 
-    await supabase.from('whoop_daily').upsert(whoopData, { onConflict: 'date' });
+    // Only upsert if we actually got at least one real value from WHOOP.
+    // Skip the upsert if everything is null — otherwise we'd overwrite good data
+    // (e.g. from the /api/whoop/ingest endpoint) with all-null values.
+    const hasData = whoopData.recovery_score != null
+      || whoopData.strain_score != null
+      || whoopData.sleep_hours != null
+      || whoopData.hrv != null;
+
+    if (hasData) {
+      await supabase.from('whoop_daily').upsert(whoopData, { onConflict: 'date' });
+    } else {
+      console.log('All WHOOP values null — skipping upsert to preserve existing data');
+    }
 
     const { data } = await supabase.from('whoop_daily').select('*').eq('date', today).maybeSingle();
     return NextResponse.json({
