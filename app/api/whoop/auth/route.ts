@@ -14,7 +14,7 @@ export async function GET() {
     response_type: 'code',
     client_id: clientId,
     redirect_uri: redirectUri,
-    scope: 'offline read:recovery read:sleep read:workout read:body_measurement read:profile',
+    scope: 'offline read:recovery read:cycles read:sleep read:workout read:profile',
     state,
   });
 
