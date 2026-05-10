@@ -4,8 +4,8 @@ interface DailyRow {
   date: string;
   revenue_mtd: number | null;
   jobs_completed_mtd: number | null;
-  estimates_sent_today: number | null;
-  estimates_accepted_today: number | null;
+  estimates_sent_mtd: number | null;
+  estimates_accepted_mtd: number | null;
 }
 
 export function aggregateMonthlyJobber(rows: DailyRow[]): MonthlyJobberData[] {
@@ -20,11 +20,12 @@ export function aggregateMonthlyJobber(rows: DailyRow[]): MonthlyJobberData[] {
     const key = row.date.slice(0, 7);
     const existing = monthMap.get(key) ?? { revenue: 0, jobs: 0, estimatesSent: 0, estimatesAccepted: 0 };
     monthMap.set(key, {
-      // revenue_mtd and jobs_completed_mtd are cumulative — take the highest seen value for the month
+      // All MTD values are cumulative — take the highest seen value (= end-of-month total)
       revenue: Math.max(existing.revenue, row.revenue_mtd ?? 0),
       jobs: Math.max(existing.jobs, row.jobs_completed_mtd ?? 0),
-      estimatesSent: existing.estimatesSent + (row.estimates_sent_today ?? 0),
-      estimatesAccepted: existing.estimatesAccepted + (row.estimates_accepted_today ?? 0),
+      // Use MTD counts so conversion reflects full-month cohort, not same-day approvals
+      estimatesSent: Math.max(existing.estimatesSent, row.estimates_sent_mtd ?? 0),
+      estimatesAccepted: Math.max(existing.estimatesAccepted, row.estimates_accepted_mtd ?? 0),
     });
   }
 

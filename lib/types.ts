@@ -32,6 +32,7 @@ export interface JobberDaily {
   jobs_completed_today: number | null;
   jobs_completed_mtd: number | null;
   estimates_sent_today: number | null;
+  estimates_sent_mtd: number | null;
   estimates_accepted_today: number | null;
   estimates_accepted_mtd: number | null;
   open_estimates: number | null;

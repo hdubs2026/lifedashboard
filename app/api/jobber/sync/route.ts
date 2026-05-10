@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { jobberQuery } from '@/lib/jobber-api';
 
-// Jobber GraphQL response types
-interface InvoiceNode { amounts: { invoicedAmount: number } }
-interface QuoteNode { status: string }
-interface JobNode { completedAt: string | null }
+interface InvoiceNode { amounts: { invoiceBalance: number } }
+interface QuoteNode { quoteStatus: string }
 
 interface SyncData {
   invoicesMtd: { nodes: InvoiceNode[] };
@@ -24,10 +22,10 @@ const SYNC_QUERY = `
     $todayEnd: ISO8601DateTime!
   ) {
     invoicesMtd: invoices(filter: { issuedDate: { start: $mtdStart, end: $todayEnd } }) {
-      nodes { amounts { invoicedAmount } }
+      nodes { amounts { invoiceBalance } }
     }
     invoicesToday: invoices(filter: { issuedDate: { start: $todayStart, end: $todayEnd } }) {
-      nodes { amounts { invoicedAmount } }
+      nodes { amounts { invoiceBalance } }
     }
     jobsMtd: jobs(filter: { jobStatus: COMPLETE, endAt: { start: $mtdStart, end: $todayEnd } }) {
       totalCount
@@ -36,19 +34,18 @@ const SYNC_QUERY = `
       totalCount
     }
     quotesMtd: quotes(filter: { createdAt: { start: $mtdStart, end: $todayEnd } }) {
-      nodes { status }
+      nodes { quoteStatus }
     }
     quotesToday: quotes(filter: { createdAt: { start: $todayStart, end: $todayEnd } }) {
-      nodes { status }
+      nodes { quoteStatus }
     }
-    quotesOpen: quotes(filter: { status: AWAITING_RESPONSE }) {
+    quotesOpen: quotes(filter: { quoteStatus: AWAITING_RESPONSE }) {
       totalCount
     }
   }
 `;
 
 export async function GET(request: NextRequest) {
-  // Allow cron (no auth header) or manual calls with webhook secret
   const secret = request.headers.get('x-webhook-secret');
   const isCron = request.headers.get('authorization') === `Bearer ${process.env.CRON_SECRET}`;
   if (!isCron && secret !== process.env.WEBHOOK_SECRET) {
@@ -64,21 +61,23 @@ export async function GET(request: NextRequest) {
 
     const data = await jobberQuery<SyncData>(SYNC_QUERY, { mtdStart, todayStart, todayEnd });
 
-    const sumInvoiced = (nodes: InvoiceNode[]) =>
-      nodes.reduce((s, n) => s + (n.amounts?.invoicedAmount ?? 0), 0);
+    const sumBalance = (nodes: InvoiceNode[]) =>
+      nodes.reduce((s, n) => s + (n.amounts?.invoiceBalance ?? 0), 0);
 
-    const revenue_mtd = sumInvoiced(data.invoicesMtd.nodes);
-    const revenue_today = sumInvoiced(data.invoicesToday.nodes);
+    const revenue_mtd = sumBalance(data.invoicesMtd.nodes);
+    const revenue_today = sumBalance(data.invoicesToday.nodes);
     const jobs_completed_mtd = data.jobsMtd.totalCount;
     const jobs_completed_today = data.jobsToday.totalCount;
 
     const countStatus = (nodes: QuoteNode[], status: string) =>
-      nodes.filter((q) => q.status === status).length;
+      nodes.filter((q) => q.quoteStatus === status).length;
 
     const estimates_sent_today = data.quotesToday.nodes.length;
+    const estimates_sent_mtd = data.quotesMtd.nodes.length;
+    // MTD conversion: of all quotes sent this month, how many are currently converted
+    // (regardless of when they were approved — fixes the always-0% issue)
     const estimates_accepted_today = countStatus(data.quotesToday.nodes, 'CONVERTED');
     const estimates_accepted_mtd = countStatus(data.quotesMtd.nodes, 'CONVERTED');
-    const estimates_sent_mtd = data.quotesMtd.nodes.length;
     const open_estimates = data.quotesOpen.totalCount;
 
     const supabase = createServerClient();
@@ -90,6 +89,7 @@ export async function GET(request: NextRequest) {
         jobs_completed_today,
         jobs_completed_mtd,
         estimates_sent_today,
+        estimates_sent_mtd,
         estimates_accepted_today,
         estimates_accepted_mtd,
         open_estimates,
@@ -100,13 +100,10 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
 
     console.log(`Jobber sync complete for ${today}:`, {
-      revenue_mtd,
-      jobs_completed_mtd,
-      estimates_sent_mtd,
-      estimates_accepted_mtd,
+      revenue_mtd, jobs_completed_mtd, estimates_sent_mtd, estimates_accepted_mtd,
     });
 
-    return NextResponse.json({ ok: true, date: today, revenue_mtd, jobs_completed_mtd });
+    return NextResponse.json({ ok: true, date: today, revenue_mtd, jobs_completed_mtd, estimates_sent_mtd, estimates_accepted_mtd });
   } catch (err) {
     console.error('Jobber sync error:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

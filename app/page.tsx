@@ -59,7 +59,7 @@ async function fetchDashboardData() {
     supabase.from('golf_rounds').select('*').order('date', { ascending: false }).limit(20),
     supabase.from('daily_entries').select('date, checking_balance, savings_balance, roth_balance').order('date', { ascending: true }).limit(90),
     fetchNotionTasks(today),
-    supabase.from('jobber_daily').select('date, revenue_mtd, jobs_completed_mtd, estimates_sent_today, estimates_accepted_today').order('date', { ascending: true }),
+    supabase.from('jobber_daily').select('date, revenue_mtd, jobs_completed_mtd, estimates_sent_mtd, estimates_accepted_mtd').order('date', { ascending: true }),
   ]);
 
   const whoop = whoopResult.status === 'fulfilled' ? (whoopResult.value.data as WhoopDaily | null) : null;

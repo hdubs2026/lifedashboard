@@ -6,7 +6,7 @@ export async function GET() {
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from('jobber_daily')
-    .select('date, revenue_mtd, jobs_completed_mtd, estimates_sent_today, estimates_accepted_today')
+    .select('date, revenue_mtd, jobs_completed_mtd, estimates_sent_mtd, estimates_accepted_mtd')
     .order('date', { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
