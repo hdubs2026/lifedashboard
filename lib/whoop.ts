@@ -114,18 +114,9 @@ export async function fetchWhoopToday(today: string): Promise<Partial<WhoopDaily
 
   try {
     const [recoveryResult, sleepResult, strainResult] = await Promise.allSettled([
-      whoopFetch<WhoopCollectionResponse<WhoopRecovery>>(
-        `/recovery?start=${today}T00:00:00.000Z&end=${today}T23:59:59.000Z&limit=1`,
-        token
-      ),
-      whoopFetch<WhoopCollectionResponse<WhoopSleep>>(
-        `/sleep?start=${today}T00:00:00.000Z&end=${today}T23:59:59.000Z&limit=1`,
-        token
-      ),
-      whoopFetch<WhoopCollectionResponse<WhoopStrain>>(
-        `/cycle?start=${today}T00:00:00.000Z&end=${today}T23:59:59.000Z&limit=1`,
-        token
-      ),
+      whoopFetch<WhoopCollectionResponse<WhoopRecovery>>('/recovery?limit=1', token),
+      whoopFetch<WhoopCollectionResponse<WhoopSleep>>('/sleep?limit=1', token),
+      whoopFetch<WhoopCollectionResponse<WhoopStrain>>('/cycle?limit=1', token),
     ]);
 
     const recovery = recoveryResult.status === 'fulfilled' ? recoveryResult.value.records[0] : null;
