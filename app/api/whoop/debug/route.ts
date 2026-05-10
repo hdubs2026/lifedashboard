@@ -28,11 +28,21 @@ export async function GET() {
       'Content-Type': 'application/json',
     };
 
+    async function tryFetch(url: string) {
+      const r = await fetch(url, { headers });
+      const text = await r.text();
+      try {
+        return { status: r.status, data: JSON.parse(text) };
+      } catch {
+        return { status: r.status, raw: text.slice(0, 200) };
+      }
+    }
+
     const [recovery, sleep, cycle, profile] = await Promise.all([
-      fetch(`${WHOOP_API_BASE}/recovery?start=${start}&limit=10`, { headers }).then(r => r.json()),
-      fetch(`${WHOOP_API_BASE}/sleep?start=${start}&limit=10`, { headers }).then(r => r.json()),
-      fetch(`${WHOOP_API_BASE}/cycle?start=${start}&limit=10`, { headers }).then(r => r.json()),
-      fetch(`${WHOOP_API_BASE}/user/profile/basic`, { headers }).then(r => r.json()),
+      tryFetch(`${WHOOP_API_BASE}/recovery?start=${start}&limit=10`),
+      tryFetch(`${WHOOP_API_BASE}/sleep?start=${start}&limit=10`),
+      tryFetch(`${WHOOP_API_BASE}/cycle?start=${start}&limit=10`),
+      tryFetch(`${WHOOP_API_BASE}/user/profile/basic`),
     ]);
 
     return NextResponse.json({
