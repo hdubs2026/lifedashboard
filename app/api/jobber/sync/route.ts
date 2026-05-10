@@ -23,25 +23,25 @@ const SYNC_QUERY = `
     $todayStart: ISO8601DateTime!
     $todayEnd: ISO8601DateTime!
   ) {
-    invoicesMtd: invoices(filter: { issuedDate: { gte: $mtdStart, lte: $todayEnd } }) {
+    invoicesMtd: invoices(filter: { issuedDate: { start: $mtdStart, end: $todayEnd } }) {
       nodes { amounts { invoicedAmount } }
     }
-    invoicesToday: invoices(filter: { issuedDate: { gte: $todayStart, lte: $todayEnd } }) {
+    invoicesToday: invoices(filter: { issuedDate: { start: $todayStart, end: $todayEnd } }) {
       nodes { amounts { invoicedAmount } }
     }
-    jobsMtd: jobs(filter: { jobStatus: COMPLETED, endAt: { gte: $mtdStart, lte: $todayEnd } }) {
+    jobsMtd: jobs(filter: { jobStatus: COMPLETE, endAt: { start: $mtdStart, end: $todayEnd } }) {
       totalCount
     }
-    jobsToday: jobs(filter: { jobStatus: COMPLETED, endAt: { gte: $todayStart, lte: $todayEnd } }) {
+    jobsToday: jobs(filter: { jobStatus: COMPLETE, endAt: { start: $todayStart, end: $todayEnd } }) {
       totalCount
     }
-    quotesMtd: quotes(filter: { createdAt: { gte: $mtdStart, lte: $todayEnd } }) {
+    quotesMtd: quotes(filter: { createdAt: { start: $mtdStart, end: $todayEnd } }) {
       nodes { status }
     }
-    quotesToday: quotes(filter: { createdAt: { gte: $todayStart, lte: $todayEnd } }) {
+    quotesToday: quotes(filter: { createdAt: { start: $todayStart, end: $todayEnd } }) {
       nodes { status }
     }
-    quotesOpen: quotes(filter: { status: { eq: AWAITING_RESPONSE } }) {
+    quotesOpen: quotes(filter: { status: AWAITING_RESPONSE }) {
       totalCount
     }
   }
