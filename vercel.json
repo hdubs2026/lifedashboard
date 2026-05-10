@@ -3,6 +3,18 @@
     {
       "path": "/api/tasks/generate",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/jobber/sync",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/jobber/sync",
+      "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/jobber/sync",
+      "schedule": "0 20 * * *"
     }
   ]
 }
