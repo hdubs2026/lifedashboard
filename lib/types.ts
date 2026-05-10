@@ -81,7 +81,6 @@ export interface HabitStreaks {
   prayer: number;
   bible: number;
   workout: number;
-  journal: number;
 }
 
 export interface AiTaskResponse {

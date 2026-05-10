@@ -7,7 +7,6 @@ interface FaithCardProps {
   prayerDone: boolean;
   bibleDone: boolean;
   workoutDone: boolean;
-  journalDone: boolean;
   reflection: string | null;
   streaks: HabitStreaks;
   entryId?: string;
@@ -17,14 +16,12 @@ const HABITS = [
   { key: 'prayer', label: 'Prayer' },
   { key: 'bible', label: 'Bible' },
   { key: 'workout', label: 'Workout' },
-  { key: 'journal', label: 'Journal' },
 ] as const;
 
 export default function FaithCard({
   prayerDone,
   bibleDone,
   workoutDone,
-  journalDone,
   reflection: initialReflection,
   streaks,
 }: FaithCardProps) {
@@ -32,7 +29,6 @@ export default function FaithCard({
     prayer: prayerDone,
     bible: bibleDone,
     workout: workoutDone,
-    journal: journalDone,
   });
   const [reflection, setReflection] = useState(initialReflection ?? '');
   const [saving, setSaving] = useState(false);
@@ -72,7 +68,6 @@ export default function FaithCard({
     prayer: habits.prayer,
     bible: habits.bible,
     workout: habits.workout,
-    journal: habits.journal,
   };
 
   return (
@@ -84,7 +79,7 @@ export default function FaithCard({
         Faith &amp; Habits
       </p>
 
-      <div className="grid grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-3 gap-4 mb-5">
         {HABITS.map(({ key, label }) => {
           const done = habitValues[key];
           const streak = streaks[key];

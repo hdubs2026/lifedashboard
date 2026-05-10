@@ -81,7 +81,6 @@ async function fetchDashboardData() {
     entryToday?.prayer_done,
     entryToday?.bible_done,
     entryToday?.workout_done,
-    entryToday?.journal_done,
   ].filter(Boolean).length;
   const roundsThisMonth = golfRounds.filter((r) => r.date >= startOfMonth).length;
 
@@ -156,7 +155,6 @@ export default async function DashboardPage() {
             prayerDone={data.entryToday?.prayer_done ?? false}
             bibleDone={data.entryToday?.bible_done ?? false}
             workoutDone={data.entryToday?.workout_done ?? false}
-            journalDone={data.entryToday?.journal_done ?? false}
             reflection={data.entryToday?.reflection ?? null}
             streaks={data.streaks}
           />

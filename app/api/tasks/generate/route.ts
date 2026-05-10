@@ -42,7 +42,6 @@ export async function POST() {
     if (entry?.prayer_done) habitsDone.push('Prayer');
     if (entry?.bible_done) habitsDone.push('Bible');
     if (entry?.workout_done) habitsDone.push('Workout');
-    if (entry?.journal_done) habitsDone.push('Journal');
 
     const userPrompt = `Today's data:
 - Recovery: ${whoop?.recovery_score ?? 'N/A'}% | HRV: ${whoop?.hrv ?? 'N/A'}ms | Strain: ${whoop?.strain_score ?? 'N/A'} | Sleep: ${whoop?.sleep_hours ?? 'N/A'}hrs

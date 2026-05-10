@@ -14,7 +14,6 @@ interface FormState {
   prayer: boolean;
   bible: boolean;
   workout: boolean;
-  journal: boolean;
   logGolf: boolean;
   golfCourse: string;
   golfScore: string;
@@ -136,7 +135,6 @@ export default function DailyModal({ isOpen, onClose }: DailyModalProps) {
     prayer: false,
     bible: false,
     workout: false,
-    journal: false,
     logGolf: false,
     golfCourse: '',
     golfScore: '',
@@ -164,7 +162,6 @@ export default function DailyModal({ isOpen, onClose }: DailyModalProps) {
           prayer_done: form.prayer,
           bible_done: form.bible,
           workout_done: form.workout,
-          journal_done: form.journal,
           reflection: form.reflection || null,
         }),
       });
@@ -251,7 +248,6 @@ export default function DailyModal({ isOpen, onClose }: DailyModalProps) {
               <Toggle label="Prayer" checked={form.prayer} onChange={(v) => set('prayer', v)} />
               <Toggle label="Bible" checked={form.bible} onChange={(v) => set('bible', v)} />
               <Toggle label="Workout" checked={form.workout} onChange={(v) => set('workout', v)} />
-              <Toggle label="Journal" checked={form.journal} onChange={(v) => set('journal', v)} />
             </div>
           </div>
 
