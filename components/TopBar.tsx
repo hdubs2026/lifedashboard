@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 interface TopBarProps {
   recoveryScore: number | null;
-  whoopConnected: boolean;
+  whoopConnected?: boolean;
 }
 
 function getRecoveryColor(score: number | null): string {
@@ -21,7 +21,7 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
-export default function TopBar({ recoveryScore, whoopConnected }: TopBarProps) {
+export default function TopBar({ recoveryScore, whoopConnected = true }: TopBarProps) {
   const [time, setTime] = useState('');
   const [dateStr, setDateStr] = useState('');
 
