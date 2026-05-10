@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { createServerClient } from '@/lib/supabase';
+import { fetchNotionTasks } from '@/lib/notion';
 import { computeStreaks } from '@/lib/streaks';
 import type { DailyEntry, WhoopDaily, JobberDaily, Task, GolfRound } from '@/lib/types';
 
@@ -14,8 +15,9 @@ import JobberCard from '@/components/cards/JobberCard';
 import FinanceCard from '@/components/cards/FinanceCard';
 import WhoopCard from '@/components/cards/WhoopCard';
 import GolfCard from '@/components/cards/GolfCard';
+import GolfChart from '@/components/cards/GolfChart';
 import NetWorthChart from '@/components/cards/NetWorthChart';
-import TaskList from '@/components/TaskList';
+import MarketsCard from '@/components/cards/MarketsCard';
 import TodoList from '@/components/TodoList';
 import FaithCard from '@/components/FaithCard';
 import DashboardClient from '@/components/DashboardClient';
@@ -44,14 +46,16 @@ async function fetchDashboardData() {
     tasksResult,
     golfResult,
     netWorthHistoryResult,
+    notionResult,
   ] = await Promise.allSettled([
     supabase.from('whoop_daily').select('*').eq('date', today).maybeSingle(),
     supabase.from('jobber_daily').select('*').eq('date', today).maybeSingle(),
     supabase.from('daily_entries').select('*').eq('date', today).maybeSingle(),
     supabase.from('daily_entries').select('*').order('date', { ascending: false }).limit(30),
-    supabase.from('tasks').select('*').eq('date', today).in('source', ['ai_agent', 'manual']).order('created_at', { ascending: true }),
+    supabase.from('tasks').select('*').eq('date', today).eq('source', 'manual').order('created_at', { ascending: true }),
     supabase.from('golf_rounds').select('*').order('date', { ascending: false }).limit(20),
     supabase.from('daily_entries').select('date, checking_balance, savings_balance, roth_balance').order('date', { ascending: true }).limit(90),
+    fetchNotionTasks(today),
   ]);
 
   const whoop = whoopResult.status === 'fulfilled' ? (whoopResult.value.data as WhoopDaily | null) : null;
@@ -60,6 +64,7 @@ async function fetchDashboardData() {
   const recentEntries = entriesRecentResult.status === 'fulfilled' ? ((entriesRecentResult.value.data ?? []) as DailyEntry[]) : [];
   const tasks = tasksResult.status === 'fulfilled' ? ((tasksResult.value.data ?? []) as Task[]) : [];
   const golfRounds = golfResult.status === 'fulfilled' ? ((golfResult.value.data ?? []) as GolfRound[]) : [];
+  const notionTasks = notionResult.status === 'fulfilled' ? notionResult.value : [];
 
   const rawHistory = netWorthHistoryResult.status === 'fulfilled'
     ? (netWorthHistoryResult.value.data ?? []) as Array<{ date: string; checking_balance: number | null; savings_balance: number | null; roth_balance: number | null }>
@@ -88,6 +93,7 @@ async function fetchDashboardData() {
     jobber,
     entryToday,
     tasks,
+    notionTasks,
     golfRounds,
     streaks,
     habitsCompleted,
@@ -108,7 +114,6 @@ export default async function DashboardPage() {
   fetch(`${baseUrl}/api/whoop`).catch(() => {});
 
   const data = await fetchDashboardData();
-  const aiTasks = data.tasks.filter((t) => t.source === 'ai_agent');
 
   return (
     <>
@@ -134,15 +139,16 @@ export default async function DashboardPage() {
           <GolfCard rounds={data.golfRounds} roundsThisMonth={data.roundsThisMonth} />
         </section>
 
-        {/* Row 3: Net Worth Chart */}
-        <section className="mb-6">
+        {/* Row 3: Net Worth + Golf Chart */}
+        <section className="grid gap-4 mb-6" style={{ gridTemplateColumns: '2fr 1fr' }}>
           <NetWorthChart data={data.netWorthHistory} />
+          <GolfChart rounds={data.golfRounds} />
         </section>
 
-        {/* Row 4: Tasks */}
+        {/* Row 4: Markets + Todo */}
         <section className="grid gap-4 mb-6" style={{ gridTemplateColumns: '3fr 2fr' }}>
-          <TaskList initialTasks={aiTasks} />
-          <TodoList notionTasks={[]} />
+          <MarketsCard />
+          <TodoList notionTasks={data.notionTasks} />
         </section>
 
         {/* Row 5: Faith */}
