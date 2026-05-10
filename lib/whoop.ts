@@ -113,15 +113,22 @@ export async function fetchWhoopToday(today: string): Promise<Partial<WhoopDaily
   }
 
   try {
+    const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0];
+    const start = `${threeDaysAgo}T00:00:00.000Z`;
+
     const [recoveryResult, sleepResult, strainResult] = await Promise.allSettled([
-      whoopFetch<WhoopCollectionResponse<WhoopRecovery>>('/recovery?limit=1', token),
-      whoopFetch<WhoopCollectionResponse<WhoopSleep>>('/sleep?limit=1', token),
-      whoopFetch<WhoopCollectionResponse<WhoopStrain>>('/cycle?limit=1', token),
+      whoopFetch<WhoopCollectionResponse<WhoopRecovery>>(`/recovery?start=${start}&limit=10`, token),
+      whoopFetch<WhoopCollectionResponse<WhoopSleep>>(`/sleep?start=${start}&limit=10`, token),
+      whoopFetch<WhoopCollectionResponse<WhoopStrain>>(`/cycle?start=${start}&limit=10`, token),
     ]);
 
-    const recovery = recoveryResult.status === 'fulfilled' ? recoveryResult.value.records[0] : null;
-    const sleep = sleepResult.status === 'fulfilled' ? sleepResult.value.records[0] : null;
-    const strain = strainResult.status === 'fulfilled' ? strainResult.value.records[0] : null;
+    const recoveryRecords = recoveryResult.status === 'fulfilled' ? recoveryResult.value.records : [];
+    const sleepRecords = sleepResult.status === 'fulfilled' ? sleepResult.value.records : [];
+    const strainRecords = strainResult.status === 'fulfilled' ? strainResult.value.records : [];
+
+    const recovery = recoveryRecords[recoveryRecords.length - 1] ?? null;
+    const sleep = sleepRecords[sleepRecords.length - 1] ?? null;
+    const strain = strainRecords[strainRecords.length - 1] ?? null;
 
     const sleepHours = sleep?.score?.stage_summary?.total_in_bed_time_milli
       ? Math.round((sleep.score.stage_summary.total_in_bed_time_milli / 3_600_000) * 10) / 10
