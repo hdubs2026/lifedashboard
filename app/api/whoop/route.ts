@@ -74,37 +74,53 @@ export async function GET() {
       whoopGet(`/cycle?start=${start}&limit=10`, token),
     ]);
 
-    console.log('WHOOP recovery records:', recovery?.records?.length ?? 'null');
-    console.log('WHOOP sleep records:', sleep?.records?.length ?? 'null');
-    console.log('WHOOP cycle records:', cycle?.records?.length ?? 'null');
+    // WHOOP returns records in DESCENDING order (newest first).
+    // records[0] = most recent, records.at(-1) = oldest.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allRecords = (arr: any[]) => arr ?? [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const scored = (arr: any[]) => allRecords(arr).filter((r: any) => r.score != null);
 
-    // Filter to only records that have been scored (score !== null)
-    // Today's in-progress cycle/sleep will have score: null until WHOOP finishes scoring it
-    const scoredRecoveries = (recovery?.records ?? []).filter((r: {score: unknown}) => r.score != null);
-    const scoredSleeps = (sleep?.records ?? []).filter((r: {score: unknown}) => r.score != null);
-    const scoredCycles = (cycle?.records ?? []).filter((r: {score: unknown}) => r.score != null);
+    // For recovery: most recent scored record
+    const latestRecovery = scored(recovery?.records)[0] ?? null;
 
-    // Try most recent scored first, fall back to any record
-    const latestRecovery = scoredRecoveries.at(-1) ?? recovery?.records?.at(-1) ?? null;
-    const latestSleep = scoredSleeps.at(-1) ?? sleep?.records?.at(-1) ?? null;
-    const latestCycle = scoredCycles.at(-1) ?? cycle?.records?.at(-1) ?? null;
+    // For cycle/strain: most recent scored cycle
+    const latestCycle = scored(cycle?.records)[0] ?? null;
 
-    console.log('scored recovery records:', scoredRecoveries.length, '/ total:', recovery?.records?.length ?? 0);
-    console.log('scored sleep records:', scoredSleeps.length, '/ total:', sleep?.records?.length ?? 0);
-    console.log('scored cycle records:', scoredCycles.length, '/ total:', cycle?.records?.length ?? 0);
-    console.log('latestCycle score:', JSON.stringify(latestCycle?.score));
-    console.log('latestSleep score:', JSON.stringify(latestSleep?.score));
-    console.log('latestRecovery score:', JSON.stringify(latestRecovery?.score));
+    // For sleep: find most recent COMPLETED sleep with a reasonable duration (not in-progress)
+    // Sleep records with end=null are still in progress — skip them.
+    // Also skip records where end-start > 16h (those are full-day cycles, not sleep periods).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const completedSleeps = allRecords(sleep?.records).filter((r: any) => {
+      if (!r.end) return false;
+      const durationMs = new Date(r.end).getTime() - new Date(r.start).getTime();
+      return durationMs > 0 && durationMs < 16 * 3_600_000; // 0–16 hours
+    });
+    const latestSleep = completedSleeps[0] ?? null; // most recent completed sleep
 
-    const sleepMs = latestSleep?.score?.stage_summary?.total_in_bed_time_milli ?? null;
+    console.log('recovery records total:', recovery?.records?.length ?? 'null', '| latestRecovery score:', JSON.stringify(latestRecovery?.score));
+    console.log('cycle records total:', cycle?.records?.length ?? 'null', '| latestCycle score:', JSON.stringify(latestCycle?.score));
+    console.log('sleep records total:', sleep?.records?.length ?? 'null', '| completedSleeps found:', completedSleeps.length);
+    console.log('latestSleep:', latestSleep ? `${latestSleep.start} → ${latestSleep.end}` : 'null');
+
+    // Sleep hours: try stage_summary first (fully processed), else calculate from start/end times
+    const sleepMsFromScore: number | null = latestSleep?.score?.stage_summary?.total_in_bed_time_milli ?? null;
+    const sleepMsFromTimes: number | null = latestSleep?.start && latestSleep?.end
+      ? new Date(latestSleep.end).getTime() - new Date(latestSleep.start).getTime()
+      : null;
+    const sleepMs = sleepMsFromScore ?? sleepMsFromTimes;
 
     const whoopData = {
       date: today,
+      // Recovery fields — only available when WHOOP calculates daily recovery (usually morning)
       recovery_score: latestRecovery?.score?.recovery_score ?? null,
       hrv: latestRecovery?.score?.hrv_rmssd_milli ?? null,
-      resting_hr: latestRecovery?.score?.resting_heart_rate ?? null,
+      // Resting HR: prefer recovery endpoint, fall back to avg HR during sleep
+      resting_hr: latestRecovery?.score?.resting_heart_rate ?? latestSleep?.score?.average_heart_rate ?? null,
+      // Sleep — WHOOP sleep endpoint may not return sleep_performance; calculate hours from times
       sleep_performance: latestSleep?.score?.sleep_performance_percentage ?? null,
       sleep_hours: sleepMs ? Math.round((sleepMs / 3_600_000) * 10) / 10 : null,
+      // Strain from daily cycle
       strain_score: latestCycle?.score?.strain ?? null,
     };
 
@@ -116,9 +132,10 @@ export async function GET() {
     return NextResponse.json({
       whoop: data as WhoopDaily | null,
       _debug: {
-        scoredCycles: scoredCycles.length,
-        scoredSleeps: scoredSleeps.length,
-        scoredRecoveries: scoredRecoveries.length,
+        completedSleepsFound: completedSleeps.length,
+        sleepUsed: latestSleep ? { start: latestSleep.start, end: latestSleep.end, score: latestSleep.score } : null,
+        cycleUsed: latestCycle ? { score: latestCycle.score } : null,
+        recoveryUsed: latestRecovery ? { score: latestRecovery.score } : null,
         extracted: whoopData,
       },
     });
