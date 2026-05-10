@@ -26,17 +26,31 @@ export async function GET(request: NextRequest) {
   }
 
   const tokens = await res.json();
-  const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+  console.log('Jobber token response keys:', Object.keys(tokens));
+
+  // expires_in is seconds; fall back to 1 hour if missing
+  const expiresInMs = (typeof tokens.expires_in === 'number' ? tokens.expires_in : 3600) * 1000;
+  const expiresAt = new Date(Date.now() + expiresInMs).toISOString();
+
+  if (!tokens.access_token) {
+    console.error('No access_token in Jobber response:', tokens);
+    return NextResponse.json({ error: 'No access_token returned', details: tokens }, { status: 500 });
+  }
 
   const supabase = createServerClient();
 
   // Delete old tokens and insert fresh
   await supabase.from('jobber_tokens').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  await supabase.from('jobber_tokens').insert({
+  const { error: insertError } = await supabase.from('jobber_tokens').insert({
     access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
+    refresh_token: tokens.refresh_token ?? '',
     expires_at: expiresAt,
   });
+
+  if (insertError) {
+    console.error('Failed to store Jobber tokens:', insertError);
+    return NextResponse.json({ error: 'Failed to store tokens', details: insertError }, { status: 500 });
+  }
 
   return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/?jobber=connected`);
 }
