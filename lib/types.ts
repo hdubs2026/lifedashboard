@@ -32,9 +32,22 @@ export interface JobberDaily {
   jobs_completed_today: number | null;
   jobs_completed_mtd: number | null;
   estimates_sent_today: number | null;
+  estimates_accepted_today: number | null;
+  estimates_accepted_mtd: number | null;
   open_estimates: number | null;
   avg_response_time_hours: number | null;
   created_at: string;
+}
+
+export interface MonthlyJobberData {
+  month: string;       // "Jan '25"
+  monthKey: string;    // "2025-01"
+  revenue: number;
+  jobs: number;
+  estimatesSent: number;
+  estimatesAccepted: number;
+  conversionRate: number | null;
+  momGrowth: number | null;  // % change vs prior month
 }
 
 export interface Task {

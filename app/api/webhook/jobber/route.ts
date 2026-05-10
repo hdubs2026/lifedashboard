@@ -23,6 +23,8 @@ export async function POST(request: NextRequest) {
           jobs_completed_today: body.jobs_completed_today ?? null,
           jobs_completed_mtd: body.jobs_completed_mtd ?? null,
           estimates_sent_today: body.estimates_sent_today ?? null,
+          estimates_accepted_today: body.estimates_accepted_today ?? null,
+          estimates_accepted_mtd: body.estimates_accepted_mtd ?? null,
           open_estimates: body.open_estimates ?? null,
           avg_response_time_hours: body.avg_response_time_hours ?? null,
         },

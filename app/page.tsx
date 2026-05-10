@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase';
 import { fetchNotionTasks } from '@/lib/notion';
 import { computeStreaks } from '@/lib/streaks';
 import type { DailyEntry, WhoopDaily, JobberDaily, Task, GolfRound } from '@/lib/types';
+import { aggregateMonthlyJobber } from '@/lib/jobber';
 
 import TopBar from '@/components/TopBar';
 import RecoveryRing from '@/components/rings/RecoveryRing';
@@ -18,6 +19,7 @@ import GolfCard from '@/components/cards/GolfCard';
 import GolfChart from '@/components/cards/GolfChart';
 import NetWorthChart from '@/components/cards/NetWorthChart';
 import MarketsCard from '@/components/cards/MarketsCard';
+import BusinessMetricsChart from '@/components/cards/BusinessMetricsChart';
 import TodoList from '@/components/TodoList';
 import FaithCard from '@/components/FaithCard';
 import DashboardClient from '@/components/DashboardClient';
@@ -47,6 +49,7 @@ async function fetchDashboardData() {
     golfResult,
     netWorthHistoryResult,
     notionResult,
+    jobberHistoryResult,
   ] = await Promise.allSettled([
     supabase.from('whoop_daily').select('*').eq('date', today).maybeSingle(),
     supabase.from('jobber_daily').select('*').eq('date', today).maybeSingle(),
@@ -56,6 +59,7 @@ async function fetchDashboardData() {
     supabase.from('golf_rounds').select('*').order('date', { ascending: false }).limit(20),
     supabase.from('daily_entries').select('date, checking_balance, savings_balance, roth_balance').order('date', { ascending: true }).limit(90),
     fetchNotionTasks(today),
+    supabase.from('jobber_daily').select('date, revenue_mtd, jobs_completed_mtd, estimates_sent_today, estimates_accepted_today').order('date', { ascending: true }),
   ]);
 
   const whoop = whoopResult.status === 'fulfilled' ? (whoopResult.value.data as WhoopDaily | null) : null;
@@ -65,6 +69,8 @@ async function fetchDashboardData() {
   const tasks = tasksResult.status === 'fulfilled' ? ((tasksResult.value.data ?? []) as Task[]) : [];
   const golfRounds = golfResult.status === 'fulfilled' ? ((golfResult.value.data ?? []) as GolfRound[]) : [];
   const notionTasks = notionResult.status === 'fulfilled' ? notionResult.value : [];
+  const jobberHistoryRows = jobberHistoryResult.status === 'fulfilled' ? (jobberHistoryResult.value.data ?? []) : [];
+  const monthlyJobber = aggregateMonthlyJobber(jobberHistoryRows as Parameters<typeof aggregateMonthlyJobber>[0]);
 
   const rawHistory = netWorthHistoryResult.status === 'fulfilled'
     ? (netWorthHistoryResult.value.data ?? []) as Array<{ date: string; checking_balance: number | null; savings_balance: number | null; roth_balance: number | null }>
@@ -100,6 +106,7 @@ async function fetchDashboardData() {
     roundsThisMonth,
     netWorthHistory,
     hasEntryToday: entryToday !== null,
+    monthlyJobber,
   };
 }
 
@@ -145,7 +152,12 @@ export default async function DashboardPage() {
           <GolfChart rounds={data.golfRounds} />
         </section>
 
-        {/* Row 4: Markets + Todo */}
+        {/* Row 4: Business Metrics */}
+        <section className="mb-6">
+          <BusinessMetricsChart data={data.monthlyJobber} />
+        </section>
+
+        {/* Row 5: Markets + Todo */}
         <section className="grid gap-4 mb-6" style={{ gridTemplateColumns: '3fr 2fr' }}>
           <MarketsCard />
           <TodoList notionTasks={data.notionTasks} />
