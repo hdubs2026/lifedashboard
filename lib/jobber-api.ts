@@ -63,12 +63,15 @@ export async function jobberQuery<T = unknown>(query: string, variables?: Record
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
-      'X-JOBBER-GRAPHQL-VERSION': '2024-11-13',
+      'X-JOBBER-GRAPHQL-VERSION': '2024-11-15',
     },
     body: JSON.stringify({ query, variables }),
   });
 
-  if (!res.ok) throw new Error(`Jobber API error: ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Jobber API error: ${res.status} — ${body}`);
+  }
   const json = await res.json();
   if (json.errors?.length) throw new Error(json.errors[0].message);
   return json.data as T;
