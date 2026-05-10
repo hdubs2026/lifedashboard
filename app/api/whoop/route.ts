@@ -78,10 +78,20 @@ export async function GET() {
     console.log('WHOOP sleep records:', sleep?.records?.length ?? 'null');
     console.log('WHOOP cycle records:', cycle?.records?.length ?? 'null');
 
-    const latestRecovery = recovery?.records?.at(-1) ?? null;
-    const latestSleep = sleep?.records?.at(-1) ?? null;
-    const latestCycle = cycle?.records?.at(-1) ?? null;
+    // Filter to only records that have been scored (score !== null)
+    // Today's in-progress cycle/sleep will have score: null until WHOOP finishes scoring it
+    const scoredRecoveries = (recovery?.records ?? []).filter((r: {score: unknown}) => r.score != null);
+    const scoredSleeps = (sleep?.records ?? []).filter((r: {score: unknown}) => r.score != null);
+    const scoredCycles = (cycle?.records ?? []).filter((r: {score: unknown}) => r.score != null);
 
+    // Try most recent scored first, fall back to any record
+    const latestRecovery = scoredRecoveries.at(-1) ?? recovery?.records?.at(-1) ?? null;
+    const latestSleep = scoredSleeps.at(-1) ?? sleep?.records?.at(-1) ?? null;
+    const latestCycle = scoredCycles.at(-1) ?? cycle?.records?.at(-1) ?? null;
+
+    console.log('scored recovery records:', scoredRecoveries.length, '/ total:', recovery?.records?.length ?? 0);
+    console.log('scored sleep records:', scoredSleeps.length, '/ total:', sleep?.records?.length ?? 0);
+    console.log('scored cycle records:', scoredCycles.length, '/ total:', cycle?.records?.length ?? 0);
     console.log('latestCycle score:', JSON.stringify(latestCycle?.score));
     console.log('latestSleep score:', JSON.stringify(latestSleep?.score));
     console.log('latestRecovery score:', JSON.stringify(latestRecovery?.score));
@@ -103,7 +113,15 @@ export async function GET() {
     await supabase.from('whoop_daily').upsert(whoopData, { onConflict: 'date' });
 
     const { data } = await supabase.from('whoop_daily').select('*').eq('date', today).maybeSingle();
-    return NextResponse.json({ whoop: data as WhoopDaily | null });
+    return NextResponse.json({
+      whoop: data as WhoopDaily | null,
+      _debug: {
+        scoredCycles: scoredCycles.length,
+        scoredSleeps: scoredSleeps.length,
+        scoredRecoveries: scoredRecoveries.length,
+        extracted: whoopData,
+      },
+    });
   } catch (err) {
     console.error('GET /api/whoop error:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
