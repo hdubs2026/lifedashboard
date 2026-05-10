@@ -28,7 +28,7 @@ export async function GET() {
       'Content-Type': 'application/json',
     };
 
-    async function tryFetch(url: string) {
+    const tryFetch = async (url: string) => {
       const r = await fetch(url, { headers });
       const text = await r.text();
       try {
