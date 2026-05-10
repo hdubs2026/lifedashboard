@@ -8,11 +8,14 @@ export async function GET() {
 
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://lifedashboard-rose.vercel.app'}/api/whoop/callback`;
 
+  const state = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,
     redirect_uri: redirectUri,
     scope: 'offline read:recovery read:sleep read:workout read:body_measurement read:profile',
+    state,
   });
 
   return NextResponse.redirect(
