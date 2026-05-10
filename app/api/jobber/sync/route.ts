@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { jobberQuery } from '@/lib/jobber-api';
 
-interface InvoiceNode { amounts: { invoiceBalance: number } }
+interface InvoiceNode { amounts: { invoiceBalance: number; paymentsTotal: number } }
 interface QuoteNode { quoteStatus: string }
 
 interface SyncData {
@@ -22,10 +22,10 @@ const SYNC_QUERY = `
     $todayEnd: ISO8601DateTime!
   ) {
     invoicesMtd: invoices(filter: { issuedDate: { start: $mtdStart, end: $todayEnd } }) {
-      nodes { amounts { invoiceBalance } }
+      nodes { amounts { invoiceBalance paymentsTotal } }
     }
     invoicesToday: invoices(filter: { issuedDate: { start: $todayStart, end: $todayEnd } }) {
-      nodes { amounts { invoiceBalance } }
+      nodes { amounts { invoiceBalance paymentsTotal } }
     }
     jobsMtd: jobs(filter: { jobStatus: COMPLETE, endAt: { start: $mtdStart, end: $todayEnd } }) {
       totalCount
@@ -61,8 +61,9 @@ export async function GET(request: NextRequest) {
 
     const data = await jobberQuery<SyncData>(SYNC_QUERY, { mtdStart, todayStart, todayEnd });
 
+    // Total invoice value = balance still owed + already paid
     const sumBalance = (nodes: InvoiceNode[]) =>
-      nodes.reduce((s, n) => s + (n.amounts?.invoiceBalance ?? 0), 0);
+      nodes.reduce((s, n) => s + (n.amounts?.invoiceBalance ?? 0) + (n.amounts?.paymentsTotal ?? 0), 0);
 
     const revenue_mtd = sumBalance(data.invoicesMtd.nodes);
     const revenue_today = sumBalance(data.invoicesToday.nodes);
@@ -76,8 +77,8 @@ export async function GET(request: NextRequest) {
     const estimates_sent_mtd = data.quotesMtd.nodes.length;
     // MTD conversion: of all quotes sent this month, how many are currently converted
     // (regardless of when they were approved — fixes the always-0% issue)
-    const estimates_accepted_today = countStatus(data.quotesToday.nodes, 'CONVERTED');
-    const estimates_accepted_mtd = countStatus(data.quotesMtd.nodes, 'CONVERTED');
+    const estimates_accepted_today = countStatus(data.quotesToday.nodes, 'converted');
+    const estimates_accepted_mtd = countStatus(data.quotesMtd.nodes, 'converted');
     const open_estimates = data.quotesOpen.totalCount;
 
     const supabase = createServerClient();

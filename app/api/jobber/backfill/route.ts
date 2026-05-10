@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { jobberQuery } from '@/lib/jobber-api';
 
-interface InvoiceNode { amounts: { invoiceBalance: number } }
+interface InvoiceNode { amounts: { invoiceBalance: number; paymentsTotal: number } }
 interface QuoteNode { quoteStatus: string }
 
 interface MonthData {
@@ -17,7 +17,7 @@ const MONTH_QUERY = `
     $end: ISO8601DateTime!
   ) {
     invoices(filter: { issuedDate: { start: $start, end: $end } }) {
-      nodes { amounts { invoiceBalance } }
+      nodes { amounts { invoiceBalance paymentsTotal } }
     }
     jobs(filter: { jobStatus: COMPLETE, endAt: { start: $start, end: $end } }) {
       totalCount
@@ -57,11 +57,11 @@ export async function GET(request: NextRequest) {
     try {
       const data = await jobberQuery<MonthData>(MONTH_QUERY, { start, end });
 
-      const revenue_mtd = data.invoices.nodes.reduce((s, n) => s + (n.amounts?.invoiceBalance ?? 0), 0);
+      const revenue_mtd = data.invoices.nodes.reduce((s, n) => s + (n.amounts?.invoiceBalance ?? 0) + (n.amounts?.paymentsTotal ?? 0), 0);
       const jobs_completed_mtd = data.jobs.totalCount;
       const estimates_sent_mtd = data.quotesSent.nodes.length;
       const estimates_accepted_mtd = data.quotesSent.nodes.filter(
-        (q) => q.quoteStatus === 'CONVERTED'
+        (q) => q.quoteStatus === 'converted'
       ).length;
 
       await supabase.from('jobber_daily').upsert(
