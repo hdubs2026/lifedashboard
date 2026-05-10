@@ -7,7 +7,7 @@ const PROBE_QUERY = `
     invoices(first: 1) {
       nodes {
         id
-        amounts { invoicedAmount total }
+        amounts { invoiceBalance depositAmount paymentsTotal }
         issuedDate
         createdAt
       }
@@ -18,12 +18,13 @@ const PROBE_QUERY = `
         jobStatus
         endAt
         startAt
+        createdAt
       }
     }
     quotes(first: 1) {
       nodes {
         id
-        status
+        quoteStatus
         createdAt
       }
     }
