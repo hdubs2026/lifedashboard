@@ -1,55 +1,38 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options as Parameters<typeof supabaseResponse.cookies.set>[2])
-          );
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow API routes and webhook routes to pass through without auth
-  if (pathname.startsWith('/api/')) {
-    return supabaseResponse;
+  // Always pass through API routes and auth callback
+  if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) {
+    return NextResponse.next();
   }
 
-  // Allow login page
+  // Derive the Supabase auth cookie name from the project URL
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
+
+  // Check for any Supabase session cookie
+  const cookies = request.cookies.getAll();
+  const hasSession =
+    cookies.some(
+      (c) =>
+        c.name === `sb-${projectRef}-auth-token` ||
+        (c.name.startsWith('sb-') && c.name.endsWith('-auth-token'))
+    );
+
   if (pathname.startsWith('/login')) {
-    if (user) {
+    if (hasSession) {
       return NextResponse.redirect(new URL('/', request.url));
     }
-    return supabaseResponse;
+    return NextResponse.next();
   }
 
-  // Require auth for everything else
-  if (!user) {
+  if (!hasSession) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
 export const config = {
