@@ -3,13 +3,13 @@ import { jobberQuery } from '@/lib/jobber-api';
 
 const PROBE_QUERY = `
   query Probe {
-    __type(name: "JobStatusTypeEnum") {
-      name
-      enumValues { name }
-    }
-    __type2: __type(name: "JobFilterAttributes") {
+    __type(name: "QuoteFilterAttributes") {
       name
       inputFields { name type { name kind ofType { name kind } } }
+    }
+    __type2: __type(name: "QuoteStatusEnum") {
+      name
+      enumValues { name }
     }
   }
 `;
