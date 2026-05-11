@@ -38,9 +38,11 @@ export async function GET() {
       }
     }
 
-    const [recovery, sleep, cycle, profile] = await Promise.all([
+    const [recovery, recoveryNoParams, sleep, sleepAlt, cycle, profile] = await Promise.all([
       tryFetch(`${WHOOP_API_BASE}/recovery?start=${start}&limit=10`),
+      tryFetch(`${WHOOP_API_BASE}/recovery?limit=5`),
       tryFetch(`${WHOOP_API_BASE}/sleep?start=${start}&limit=10`),
+      tryFetch(`${WHOOP_API_BASE}/activity/sleep?start=${start}&limit=10`),
       tryFetch(`${WHOOP_API_BASE}/cycle?start=${start}&limit=10`),
       tryFetch(`${WHOOP_API_BASE}/user/profile/basic`),
     ]);
@@ -49,7 +51,9 @@ export async function GET() {
       token_expires_at: stored.expires_at,
       profile,
       recovery,
+      recoveryNoParams,
       sleep,
+      sleepAlt,
       cycle,
     });
   } catch (err) {
