@@ -39,7 +39,7 @@ const SYNC_QUERY = `
     quotesToday: quotes(filter: { createdAt: { after: $todayStart, before: $todayEnd } }) {
       nodes { quoteStatus }
     }
-    quotesOpen: quotes(filter: { quoteStatus: AWAITING_RESPONSE }) {
+    quotesOpen: quotes(filter: { status: awaiting_response }) {
       totalCount
     }
   }
