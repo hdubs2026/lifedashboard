@@ -69,27 +69,31 @@ export default function TopBar({ recoveryScore, whoopConnected = true, jobberCon
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Jobber reconnect button */}
-        {!jobberConnected && (
-          <a
-            href="/api/jobber/auth"
-            className="text-xs px-3 py-1.5 rounded border border-[#f97316]/30 text-[#f97316] hover:bg-[#f97316]/10 transition-colors"
-            style={{ fontFamily: 'DM Mono, monospace' }}
-          >
-            Reconnect Jobber
-          </a>
-        )}
+        {/* Jobber reconnect — always visible for easy re-auth */}
+        <a
+          href="/api/jobber/auth"
+          className="text-xs px-3 py-1.5 rounded border transition-colors"
+          style={{
+            fontFamily: 'DM Mono, monospace',
+            borderColor: jobberConnected ? '#f97316' : '#f9731680',
+            color: jobberConnected ? '#f97316' : '#f9731699',
+          }}
+        >
+          {jobberConnected ? 'Jobber' : 'Reconnect Jobber'}
+        </a>
 
-        {/* WHOOP reconnect button */}
-        {!whoopConnected && (
-          <a
-            href="/api/whoop/auth"
-            className="text-xs px-3 py-1.5 rounded border border-[#00ff87]/30 text-[#00ff87] hover:bg-[#00ff87]/10 transition-colors"
-            style={{ fontFamily: 'DM Mono, monospace' }}
-          >
-            Reconnect WHOOP
-          </a>
-        )}
+        {/* WHOOP reconnect — always visible for easy re-auth */}
+        <a
+          href="/api/whoop/auth"
+          className="text-xs px-3 py-1.5 rounded border transition-colors"
+          style={{
+            fontFamily: 'DM Mono, monospace',
+            borderColor: whoopConnected ? '#00ff87' : '#00ff8780',
+            color: whoopConnected ? '#00ff87' : '#00ff8799',
+          }}
+        >
+          {whoopConnected ? 'WHOOP' : 'Reconnect WHOOP'}
+        </a>
 
         {/* Recovery badge */}
         <div
