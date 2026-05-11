@@ -27,10 +27,10 @@ const SYNC_QUERY = `
     invoicesToday: invoices(filter: { issuedDate: { after: $todayStart, before: $todayEnd } }) {
       nodes { amounts { invoiceBalance paymentsTotal } }
     }
-    jobsMtd: jobs(filter: { jobStatus: COMPLETE, endAt: { after: $mtdStart, before: $todayEnd } }) {
+    jobsMtd: jobs(filter: { status: COMPLETE, endAt: { after: $mtdStart, before: $todayEnd } }) {
       totalCount
     }
-    jobsToday: jobs(filter: { jobStatus: COMPLETE, endAt: { after: $todayStart, before: $todayEnd } }) {
+    jobsToday: jobs(filter: { status: COMPLETE, endAt: { after: $todayStart, before: $todayEnd } }) {
       totalCount
     }
     quotesMtd: quotes(filter: { createdAt: { after: $mtdStart, before: $todayEnd } }) {
