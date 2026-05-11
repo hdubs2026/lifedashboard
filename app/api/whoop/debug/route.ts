@@ -38,22 +38,35 @@ export async function GET() {
       }
     }
 
-    const [recovery, recoveryNoParams, sleep, sleepAlt, cycle, profile] = await Promise.all([
-      tryFetch(`${WHOOP_API_BASE}/recovery?start=${start}&limit=10`),
+    const cycle = await tryFetch(`${WHOOP_API_BASE}/cycle?start=${start}&limit=5`);
+    const cycleIds: number[] = (cycle?.data?.records ?? []).map((r: { id: number }) => r.id);
+    const latestCycleId = cycleIds[0] ?? null;
+
+    const [
+      recoveryList,
+      recoveryByCycle,
+      sleepList,
+      sleepAlt,
+      sleepNoParams,
+      profile,
+    ] = await Promise.all([
       tryFetch(`${WHOOP_API_BASE}/recovery?limit=5`),
-      tryFetch(`${WHOOP_API_BASE}/sleep?start=${start}&limit=10`),
-      tryFetch(`${WHOOP_API_BASE}/activity/sleep?start=${start}&limit=10`),
-      tryFetch(`${WHOOP_API_BASE}/cycle?start=${start}&limit=10`),
+      latestCycleId ? tryFetch(`${WHOOP_API_BASE}/recovery/${latestCycleId}`) : Promise.resolve(null),
+      tryFetch(`${WHOOP_API_BASE}/sleep?limit=5`),
+      tryFetch(`${WHOOP_API_BASE}/activity/sleep?limit=5`),
+      tryFetch(`${WHOOP_API_BASE}/activity/sleep`),
       tryFetch(`${WHOOP_API_BASE}/user/profile/basic`),
     ]);
 
     return NextResponse.json({
       token_expires_at: stored.expires_at,
+      latestCycleId,
       profile,
-      recovery,
-      recoveryNoParams,
-      sleep,
+      recoveryList,
+      recoveryByCycle,
+      sleepList,
       sleepAlt,
+      sleepNoParams,
       cycle,
     });
   } catch (err) {
