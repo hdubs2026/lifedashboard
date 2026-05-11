@@ -3,15 +3,11 @@ import { jobberQuery } from '@/lib/jobber-api';
 
 const PROBE_QUERY = `
   query Probe {
-    __type(name: "Iso8601DateTimeRangeInput") {
+    __type(name: "JobStatusTypeEnum") {
       name
-      inputFields { name type { name kind ofType { name kind } } }
+      enumValues { name }
     }
-    __type2: __type(name: "DateRangeInput") {
-      name
-      inputFields { name type { name kind ofType { name kind } } }
-    }
-    __type3: __type(name: "JobFilterInput") {
+    __type2: __type(name: "JobFilterAttributes") {
       name
       inputFields { name type { name kind ofType { name kind } } }
     }
