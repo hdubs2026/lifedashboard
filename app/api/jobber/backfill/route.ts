@@ -16,13 +16,13 @@ const MONTH_QUERY = `
     $start: ISO8601DateTime!
     $end: ISO8601DateTime!
   ) {
-    invoices(filter: { issuedDate: { start: $start, end: $end } }) {
+    invoices(filter: { issuedDate: { after: $start, before: $end } }) {
       nodes { amounts { invoiceBalance paymentsTotal } }
     }
-    jobs(filter: { jobStatus: COMPLETE, endAt: { start: $start, end: $end } }) {
+    jobs(filter: { jobStatus: COMPLETE, endAt: { after: $start, before: $end } }) {
       totalCount
     }
-    quotesSent: quotes(filter: { createdAt: { start: $start, end: $end } }) {
+    quotesSent: quotes(filter: { createdAt: { after: $start, before: $end } }) {
       nodes { quoteStatus }
     }
   }

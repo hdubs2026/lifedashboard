@@ -21,22 +21,22 @@ const SYNC_QUERY = `
     $todayStart: ISO8601DateTime!
     $todayEnd: ISO8601DateTime!
   ) {
-    invoicesMtd: invoices(filter: { issuedDate: { start: $mtdStart, end: $todayEnd } }) {
+    invoicesMtd: invoices(filter: { issuedDate: { after: $mtdStart, before: $todayEnd } }) {
       nodes { amounts { invoiceBalance paymentsTotal } }
     }
-    invoicesToday: invoices(filter: { issuedDate: { start: $todayStart, end: $todayEnd } }) {
+    invoicesToday: invoices(filter: { issuedDate: { after: $todayStart, before: $todayEnd } }) {
       nodes { amounts { invoiceBalance paymentsTotal } }
     }
-    jobsMtd: jobs(filter: { jobStatus: COMPLETE, endAt: { start: $mtdStart, end: $todayEnd } }) {
+    jobsMtd: jobs(filter: { jobStatus: COMPLETE, endAt: { after: $mtdStart, before: $todayEnd } }) {
       totalCount
     }
-    jobsToday: jobs(filter: { jobStatus: COMPLETE, endAt: { start: $todayStart, end: $todayEnd } }) {
+    jobsToday: jobs(filter: { jobStatus: COMPLETE, endAt: { after: $todayStart, before: $todayEnd } }) {
       totalCount
     }
-    quotesMtd: quotes(filter: { createdAt: { start: $mtdStart, end: $todayEnd } }) {
+    quotesMtd: quotes(filter: { createdAt: { after: $mtdStart, before: $todayEnd } }) {
       nodes { quoteStatus }
     }
-    quotesToday: quotes(filter: { createdAt: { start: $todayStart, end: $todayEnd } }) {
+    quotesToday: quotes(filter: { createdAt: { after: $todayStart, before: $todayEnd } }) {
       nodes { quoteStatus }
     }
     quotesOpen: quotes(filter: { quoteStatus: AWAITING_RESPONSE }) {
