@@ -38,7 +38,8 @@ export async function getJobberToken(): Promise<string | null> {
   }
 
   const tokens = await res.json();
-  const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+  const expiresInMs = (typeof tokens.expires_in === 'number' ? tokens.expires_in : 3600) * 1000;
+  const newExpiresAt = new Date(Date.now() + expiresInMs).toISOString();
 
   await supabase
     .from('jobber_tokens')
