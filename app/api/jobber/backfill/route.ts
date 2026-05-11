@@ -19,7 +19,7 @@ const MONTH_QUERY = `
     invoices(filter: { issuedDate: { after: $start, before: $end } }) {
       nodes { amounts { invoiceBalance paymentsTotal } }
     }
-    jobs(filter: { status: COMPLETE, endAt: { after: $start, before: $end } }) {
+    jobs(filter: { completedAt: { after: $start, before: $end } }) {
       totalCount
     }
     quotesSent: quotes(filter: { createdAt: { after: $start, before: $end } }) {
