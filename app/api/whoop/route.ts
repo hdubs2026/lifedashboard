@@ -71,7 +71,7 @@ async function whoopGet(path: string, token: string) {
     next: { revalidate: 0 },
   });
   const text = await res.text();
-  if (!res.ok) { console.warn(`WHOOP ${path} → ${res.status}`); return null; }
+  if (!res.ok) { console.warn(`WHOOP ${path} → ${res.status}: ${text}`); return { _error: res.status, _body: text }; }
   try { return JSON.parse(text); } catch { return null; }
 }
 
@@ -169,6 +169,18 @@ export async function GET() {
         cycleUsed: latestCycle ? { score: latestCycle.score } : null,
         recoveryUsed: latestRecovery ? { score: latestRecovery.score } : null,
         extracted: whoopData,
+        raw: {
+          recoveryKeys: recovery ? Object.keys(recovery) : null,
+          recoveryError: (recovery as any)?._error ?? null,
+          recoveryBody: (recovery as any)?._body ?? null,
+          recoveryRecordCount: recovery?.records?.length ?? null,
+          recoveryFirstRecord: recovery?.records?.[0] ?? null,
+          sleepKeys: sleep ? Object.keys(sleep) : null,
+          sleepError: (sleep as any)?._error ?? null,
+          sleepBody: (sleep as any)?._body ?? null,
+          sleepRecordCount: sleep?.records?.length ?? null,
+          sleepFirstRecord: sleep?.records?.[0] ?? null,
+        },
       },
     });
   } catch (err) {
