@@ -1,32 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jobberQuery } from '@/lib/jobber-api';
 
-// Probe Jobber schema to find correct filter field names
 const PROBE_QUERY = `
   query Probe {
-    invoices(first: 1) {
-      nodes {
-        id
-        amounts { invoiceBalance depositAmount paymentsTotal }
-        issuedDate
-        createdAt
-      }
+    __type(name: "Iso8601DateTimeRangeInput") {
+      name
+      inputFields { name type { name kind ofType { name kind } } }
     }
-    jobs(first: 1) {
-      nodes {
-        id
-        jobStatus
-        endAt
-        startAt
-        createdAt
-      }
+    __type2: __type(name: "DateRangeInput") {
+      name
+      inputFields { name type { name kind ofType { name kind } } }
     }
-    quotes(first: 1) {
-      nodes {
-        id
-        quoteStatus
-        createdAt
-      }
+    __type3: __type(name: "JobFilterInput") {
+      name
+      inputFields { name type { name kind ofType { name kind } } }
     }
   }
 `;
